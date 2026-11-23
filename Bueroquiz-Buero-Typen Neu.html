@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Büro-Typen-Quiz</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap">
+<style>
+  /* Layout: ein schmaler Aktenbogen, oben Fortschritt, darunter eine Frage pro Bildschirm.
+     Palette: Aktenblau als Tinte, Textmarker-Gelb als einziger Akzent im Spiel. */
+  :root {
+    --bg: #eaeef6;
+    --paper: #ffffff;
+    --ink: #14213d;
+    --muted: #55607a;
+    --line: #cdd5e6;
+    --accent: #2a47c9;
+    --on-accent: #ffffff;
+    --mark: #ffe14d;
+    --on-mark: #14213d;
+    --bar: #b9c4de;
+    --tint: #f3f6fc;
+    --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1424;
+      --paper: #161f36;
+      --ink: #e8ecf7;
+      --muted: #9aa6c3;
+      --line: #2a3556;
+      --accent: #8fa3ff;
+      --on-accent: #0e1424;
+      --mark: #ffd93d;
+      --on-mark: #14213d;
+      --bar: #36436b;
+      --tint: #1b2640;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1424;
+    --paper: #161f36;
+    --ink: #e8ecf7;
+    --muted: #9aa6c3;
+    --line: #2a3556;
+    --accent: #8fa3ff;
+    --on-accent: #0e1424;
+    --mark: #ffd93d;
+    --on-mark: #14213d;
+    --bar: #36436b;
+    --tint: #1b2640;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.55 var(--font-body);
+    padding-block: 20px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { max-width: 680px; margin: 0 auto; display: grid; gap: 16px; }
+
+  .topbar {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    font: 500 12px/1.2 var(--font-mono);
+    letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+  }
+  .progress { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .progress > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s ease; }
+
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 28px;
+    min-width: 0;
+  }
+  h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.12; letter-spacing: -.01em; }
+  h1 { font-size: clamp(2rem, 7vw, 2.9rem); font-weight: 700; }
+  h2 { font-size: clamp(1.45rem, 4.6vw, 1.85rem); font-weight: 650; }
+  h3 { font-size: 1.05rem; font-weight: 650; }
+  p { margin: 0; }
+  .lead { color: var(--muted); max-width: 52ch; }
+  .stack { display: grid; gap: 18px; }
+  .label { font: 500 12px/1.2 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+  .types { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .types li {
+    border: 1px solid var(--line); border-radius: 99px; padding: 5px 12px 5px 10px;
+    font-size: .9rem; background: var(--tint); display: inline-flex; gap: 6px; align-items: center;
+  }
+
+  .btn {
+    appearance: none; font: 600 1rem/1 var(--font-body); cursor: pointer;
+    border-radius: 8px; padding: 14px 20px; border: 1px solid var(--accent);
+    background: var(--accent); color: var(--on-accent);
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost { background: transparent; color: var(--accent); }
+  .btn.ghost:hover { background: var(--tint); filter: none; }
+  .btn[disabled] { opacity: .4; cursor: default; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .question { font-size: clamp(1.3rem, 4.4vw, 1.65rem); font-weight: 650; outline: none; }
+  .options { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .opt {
+    width: 100%; text-align: left; cursor: pointer;
+    font: 500 1rem/1.4 var(--font-body); color: var(--ink);
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .opt:hover { border-color: var(--accent); background: var(--tint); }
+  .opt.sel, .opt.sel:hover { background: var(--mark); color: var(--on-mark); border-color: var(--mark); }
+  .nav { display: flex; justify-content: space-between; align-items: center; }
+  .linkbtn { background: none; border: 0; padding: 6px 0; font: 500 .95rem var(--font-body); color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .linkbtn[disabled] { visibility: hidden; }
+
+  .result-head { display: flex; align-items: center; gap: 16px; }
+  .avatar {
+    width: 76px; height: 76px; flex: none; border-radius: 50%;
+    background: var(--mark); display: grid; place-items: center; font-size: 38px; line-height: 1;
+  }
+  .stamp {
+    margin-left: auto; transform: rotate(-5deg);
+    font: 500 12px/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase;
+    color: var(--accent); border: 2px solid var(--accent); border-radius: 4px; padding: 6px 9px;
+    white-space: nowrap;
+  }
+  .tagline span {
+    background: var(--mark); color: var(--on-mark);
+    padding: .1em .45em; border-radius: 3px;
+    -webkit-box-decoration-break: clone; box-decoration-break: clone;
+    font-family: var(--font-display); font-weight: 600; font-size: 1.15rem; line-height: 1.8;
+  }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+  .fact { background: var(--tint); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 4px; min-width: 0; }
+  .fact p { font-size: .95rem; }
+
+  .bars { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+  .bars li { display: grid; gap: 5px; }
+  .bars .top { display: flex; justify-content: space-between; gap: 12px; font-size: .95rem; }
+  .bars .top b { font-weight: 600; }
+  .bars .top span:last-child { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); }
+  .track { height: 8px; background: var(--tint); border: 1px solid var(--line); border-radius: 99px; overflow: hidden; }
+  .track i { display: block; height: 100%; background: var(--bar); border-radius: 99px; }
+  .bars li.win .track i { background: var(--accent); }
+  .bars li.win .top b { color: var(--ink); }
+
+  .copybox { display: grid; gap: 6px; }
+  .copybox input { font: 400 .95rem var(--font-body); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); width: 100%; }
+  .note { font-size: .9rem; color: var(--muted); }
+
+  @media (max-width: 440px) {
+    .card { padding: 20px; }
+    .stamp { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .progress > i { transition: none; }
+  }
+</style>
+
+<main class="wrap">
+  <div class="topbar">
+    <span>Büro-Typen-Quiz</span>
+    <span id="count" aria-live="polite"></span>
+  </div>
+  <div class="progress" id="progress" role="progressbar" aria-label="Fortschritt" aria-valuemin="0" aria-valuemax="20" aria-valuenow="0"><i id="bar"></i></div>
+
+  <!-- Start -->
+  <section class="card stack" id="start">
+    <h1>Welcher Büro-Typ bist du?</h1>
+    <p class="lead">20 Fragen zu Montagen, Meetings und Kaffeepausen. Am Ende steht fest, welcher von neun Charakteren im Büro am besten zu dir passt.</p>
+    <ul class="types" id="typelist" aria-label="Die neun Büro-Typen"></ul>
+    <div class="row"><button class="btn" id="go" type="button">Quiz starten</button></div>
+    <p class="note">Dauert etwa drei Minuten. Antworte so, wie du dich an einem normalen Arbeitstag verhältst.</p>
+  </section>
+
+  <!-- Frage -->
+  <section class="card stack" id="quiz" hidden>
+    <h2 class="question" id="qtext" tabindex="-1"></h2>
+    <ul class="options" id="opts"></ul>
+    <div class="nav">
+      <button class="linkbtn" id="back" type="button">Zurück</button>
+      <span class="note">Antwort antippen, es geht automatisch weiter.</span>
+    </div>
+  </section>
+
+  <!-- Ergebnis -->
+  <section class="stack" id="result" hidden>
+    <div class="card stack">
+      <div class="result-head">
+        <div class="avatar" id="r-emoji" aria-hidden="true"></div>
+        <div class="stamp">Ergebnis</div>
+      </div>
+      <div class="stack" style="gap:10px">
+        <p class="label">Dein Büro-Typ</p>
+        <h2 id="r-name" tabindex="-1" style="outline:none"></h2>
+        <p class="tagline"><span id="r-tag"></span></p>
+      </div>
+      <p id="r-desc"></p>
+      <div class="facts">
+        <div class="fact"><p class="label">Superkraft</p><p id="r-power"></p></div>
+        <div class="fact"><p class="label">Schwäche</p><p id="r-weak"></p></div>
+        <div class="fact"><p class="label">Passt gut zu</p><p id="r-match"></p></div>
+      </div>
+      <div class="row">
+        <button class="btn" id="again" type="button">Nochmal spielen</button>
+        <button class="btn ghost" id="copy" type="button">Ergebnis kopieren</button>
+      </div>
+      <div class="copybox" id="copybox" hidden>
+        <input id="copytext" type="text" readonly aria-label="Ergebnistext">
+        <p class="note" id="copynote"></p>
+      </div>
+    </div>
+
+    <div class="card stack">
+      <h3>So verteilen sich deine Antworten</h3>
+      <ul class="bars" id="bars"></ul>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var TYPES = {
+    K: { emoji: "☕", name: "Der Kaffee-Junkie", tag: "Erst Kaffee, dann Menschen.",
+      desc: "Dein Arbeitstag beginnt erst, wenn die Maschine durchgelaufen ist. Vorher sind Gespräche, Mails und gute Laune optional. Du kennst jede Tasse im Schrank und weißt genau, wer die Kaffeekasse nicht füllt.",
+      power: "Ab der zweiten Tasse unaufhaltsam.", weak: "Ohne Koffein ist mit dir nicht zu reden.", match: "K→U" },
+    A: { emoji: "🛋️", name: "Der Profi-Aufschieber", tag: "Morgen ist auch noch ein Tag.",
+      desc: "Du arbeitest am besten unter Druck, und der kommt bei dir zuverlässig kurz vor der Frist. Bis dahin ist plötzlich alles andere wichtiger: Schreibtisch sortieren, Pflanzen gießen, Ablage ordnen.",
+      power: "Erstaunliche Leistung in der letzten Stunde.", weak: "Die letzte Stunde ist manchmal zu kurz.", match: "A→P" },
+    D: { emoji: "🎭", name: "Der Drama-Manager", tag: "Das glaubt ihr nicht.",
+      desc: "Bei dir gibt es keine Kleinigkeiten, nur Geschichten. Ein defekter Drucker wird zum Thriller, ein verschobener Termin zur Staatskrise. Dafür weiß im ganzen Haus jeder, was passiert ist.",
+      power: "Bringt Tempo und Leben in jedes Flurgespräch.", weak: "Aus der Mücke wird bei dir schnell ein Elefant.", match: "D→M" },
+    I: { emoji: "📱", name: "Der Büro-Influencer", tag: "Habt ihr das schon gesehen?",
+      desc: "Du weißt, was im Haus läuft, und alle anderen sollen es auch wissen. Neue Kaffeemaschine, Teamfoto, Meilenstein im Projekt: Du machst Inhalt daraus und sorgst dafür, dass es gesehen wird.",
+      power: "Sorgt dafür, dass gute Arbeit sichtbar wird.", weak: "Das Foto ist manchmal fertiger als die Aufgabe.", match: "I→B" },
+    B: { emoji: "🧐", name: "Der Besserwisser", tag: "Eigentlich ist das so geregelt.",
+      desc: "Du kennst die Dienstanweisung, den Paragrafen und die Ausnahme von der Ausnahme. Wenn jemand unsicher ist, bist du die erste Anlaufstelle, ob die Person das möchte oder nicht.",
+      power: "Kennt jede Regel und findet jeden Fehler.", weak: "Das Wort „eigentlich“ benutzt du öfter, als dir lieb ist.", match: "B→A" },
+    U: { emoji: "🏖️", name: "Der Urlaubsreife", tag: "Ist schon Freitag? Nein? Schade.",
+      desc: "Dein Körper sitzt im Büro, dein Kopf liegt am Meer. Du kennst die Resturlaubstage auswendig und weißt genau, welche Brückentage sich lohnen.",
+      power: "Plant Erholung so gründlich wie andere ein Projekt.", weak: "Die Konzentration sinkt mit jedem Tag, den der Urlaub näher rückt.", match: "U→K" },
+    P: { emoji: "✅", name: "Der Produktivitäts-Profi", tag: "Inbox Zero ist kein Ziel, sondern ein Lebensstil.",
+      desc: "Listen, Farben, Prioritäten: Dein Tag ist durchgetaktet. Aufgaben kommen rein und sind kurz darauf erledigt. Die anderen bewundern dich und fragen sich leise, ob du auch mal Pause machst.",
+      power: "Behält den Überblick, auch bei dreißig offenen Punkten.", weak: "Spontanität steht nicht im Kalender.", match: "P→A" },
+    E: { emoji: "🎤", name: "Der Büro-Entertainer", tag: "Kennt ihr den schon?",
+      desc: "Wo du bist, wird gelacht. Du hast für jede Situation eine Anekdote, für jede Besprechung einen Spruch und für jeden Geburtstag eine Rede. Ohne dich wäre der Flur ziemlich still.",
+      power: "Hebt die Stimmung im ganzen Haus.", weak: "Die Kaffeepause dauert eine Geschichte länger als geplant.", match: "E→M" },
+    M: { emoji: "🐭", name: "Die Büro-Maus", tag: "Ich mache nur kurz … leise.",
+      desc: "Du arbeitest zuverlässig und unauffällig. Niemand merkt, wie viel du erledigst, bis du einmal fehlst. Ruhe ist für dich kein Luxus, sondern Arbeitsmaterial.",
+      power: "Ruhe, Verlässlichkeit und tiefe Konzentration.", weak: "Du verkaufst deine Leistung zu leise.", match: "M→I" }
+  };
+  var ORDER = ["K", "A", "D", "I", "B", "U", "P", "E", "M"];
+
+  var Q = [
+    { q: "Montag, 8:00 Uhr. Was machst du als Erstes?", a: [
+      ["Zur Kaffeemaschine. Gespräche gibt es später.", "K"],
+      ["Kalender und Aufgabenliste durchgehen.", "P"],
+      ["Nachzählen, wie viele Tage es noch bis zum Urlaub sind.", "U"],
+      ["Leise zum Platz und Kopfhörer auf.", "M"]] },
+    { q: "Eine neue Aufgabe mit Frist in zwei Wochen landet auf deinem Tisch.", a: [
+      ["Ich fange nächste Woche an. Oder übernächste.", "A"],
+      ["Ich zerlege sie sofort in Teilaufgaben.", "P"],
+      ["Ich erzähle allen, wie schlimm das wird.", "D"],
+      ["Ich prüfe erst, ob das überhaupt in meine Zuständigkeit fällt.", "B"]] },
+    { q: "Teambesprechung. Wie trittst du auf?", a: [
+      ["Ich lockere die Runde mit einer Anekdote auf.", "E"],
+      ["Ich korrigiere, was im Protokoll falsch steht.", "B"],
+      ["Ich sage wenig, aber ich habe alles notiert.", "M"],
+      ["Ich poste hinterher ein Foto vom Flipchart.", "I"]] },
+    { q: "Wie sieht dein Schreibtisch aus?", a: [
+      ["Tassen. Viele Tassen.", "K"],
+      ["Eine Postkarte vom Strand und ein Urlaubskalender.", "U"],
+      ["Aufgeräumt, jede Mappe hat ihren Platz.", "P"],
+      ["Ein Stapel mit dem Zettel „mache ich später“.", "A"]] },
+    { q: "Ein Kollege fragt: „Hast du kurz Zeit?“", a: [
+      ["Erst Kaffee, dann Zeit.", "K"],
+      ["Klar. Dazu fällt mir auch gleich eine Geschichte ein.", "E"],
+      ["Ich tue so, als hätte ich ihn nicht gehört.", "M"],
+      ["Dafür gibt es eigentlich einen festen Ablauf.", "B"]] },
+    { q: "Der Drucker streikt mal wieder.", a: [
+      ["Das glaubt ihr nicht, was mir damit gerade passiert ist!", "D"],
+      ["Ich erkläre allen, wie man ihn richtig bedient.", "B"],
+      ["Ich mache ein Foto und schicke es in den Teamchat.", "I"],
+      ["Gut, dann verschiebe ich den Ausdruck eben.", "A"]] },
+    { q: "Freitag, 15:30 Uhr.", a: [
+      ["Gedanklich bin ich schon am Strand.", "U"],
+      ["Noch zwei Aufgaben abhaken, dann die Woche planen.", "P"],
+      ["Der letzte Kaffee der Woche muss sein.", "K"],
+      ["Ich erzähle noch schnell einen Witz fürs Wochenende.", "E"]] },
+    { q: "Ein wichtiger Termin wird kurzfristig verschoben.", a: [
+      ["Wie soll ich das jetzt noch schaffen?!", "D"],
+      ["Ich plane um, das war es.", "P"],
+      ["Ich freue mich still über mehr Zeit.", "A"],
+      ["Ich bekomme es kaum mit, weil ich in Ruhe arbeite.", "M"]] },
+    { q: "Welcher Satz passt am besten zu dir?", a: [
+      ["„Eigentlich ist das so geregelt.“", "B"],
+      ["„Morgen ist auch noch ein Tag.“", "A"],
+      ["„Habt ihr das schon gesehen?“", "I"],
+      ["„Wie viele Tage noch bis zum Urlaub?“", "U"]] },
+    { q: "Mittagspause. Wo findet man dich?", a: [
+      ["In der Kantine, mit der besten Geschichte der Woche.", "E"],
+      ["Allein am Platz, endlich Ruhe.", "M"],
+      ["Am Tisch, wo ich erzähle, was heute schon alles schiefgelaufen ist.", "D"],
+      ["An der Kaffeemaschine. Essen kann warten.", "K"]] },
+    { q: "Du musst eine Rundmail an alle schreiben.", a: [
+      ["Betreff in Großbuchstaben, damit es alle ernst nehmen.", "D"],
+      ["Ich prüfe jeden Satz gegen die Dienstanweisung.", "B"],
+      ["Mit Überschrift, Hervorhebungen und der Bitte, sie weiterzuleiten.", "I"],
+      ["Ich schreibe sie, wenn es wirklich nicht mehr anders geht.", "A"]] },
+    { q: "Eine Kollegin hat Geburtstag.", a: [
+      ["Ich organisiere die Feier und halte eine Rede.", "E"],
+      ["Ich unterschreibe die Karte ganz klein in der Ecke.", "M"],
+      ["Ich mache ein Gruppenfoto und teile es.", "I"],
+      ["Ich bringe Kuchen mit, aber nur, wenn es auch Kaffee gibt.", "K"]] },
+    { q: "Der Stress steigt. Was hilft dir?", a: [
+      ["Einen Urlaub buchen.", "U"],
+      ["Eine Liste schreiben und Prioritäten setzen.", "P"],
+      ["Allen erzählen, wie schlimm es gerade ist.", "D"],
+      ["Erst einmal einen Kaffee.", "K"]] },
+    { q: "Wie sieht dein E-Mail-Postfach aus?", a: [
+      ["Leer. Immer.", "P"],
+      ["Mehrere tausend ungelesene Mails, kein Problem.", "A"],
+      ["Voller Mails mit „DRINGEND“ im Betreff.", "D"],
+      ["Sortiert nach Zuständigkeit und mit Aktenzeichen.", "B"]] },
+    { q: "Eine neue Software wird eingeführt.", a: [
+      ["Ich lerne sie schnell und teile Tipps im Teamchat.", "I"],
+      ["Ich frage nach Datenschutz und Zuständigkeiten.", "B"],
+      ["Ich warte, bis mir jemand zeigt, wie es geht.", "M"],
+      ["Ich mache daraus einen Running Gag für den Flur.", "E"]] },
+    { q: "Wie gehst du mit deinem Urlaub um?", a: [
+      ["Ich zähle die Tage.", "U"],
+      ["Ich trage ihn gleich zu Jahresbeginn im Kalender ein.", "P"],
+      ["Ich schiebe die Planung vor mir her.", "A"],
+      ["Ich buche nur, wenn am Urlaubsort guter Kaffee garantiert ist.", "K"]] },
+    { q: "Dein Chef lobt dich vor versammelter Runde.", a: [
+      ["Ich möchte im Boden versinken.", "M"],
+      ["Ich bedanke mich mit einem Witz.", "E"],
+      ["Ich teile das Lob direkt im Netzwerk.", "I"],
+      ["Ich weise darauf hin, dass das in der Aufgabenbeschreibung stand.", "B"]] },
+    { q: "Im ganzen Haus fällt der Strom aus.", a: [
+      ["Das glaubt ihr nicht, und das ausgerechnet heute!", "D"],
+      ["Perfekt, dann ist früher Feierabend.", "U"],
+      ["Die Kaffeemaschine geht auch nicht. Das ist der eigentliche Notfall.", "K"],
+      ["Ich plane die Arbeit auf Papier weiter.", "P"]] },
+    { q: "Wie würden Kolleginnen und Kollegen dich beschreiben?", a: [
+      ["Ruhig und zuverlässig.", "M"],
+      ["Unterhält den ganzen Flur.", "E"],
+      ["Immer als Erstes informiert.", "I"],
+      ["Macht das schon, irgendwann.", "A"]] },
+    { q: "Wie sieht dein perfekter Feierabend aus?", a: [
+      ["Alle Aufgaben erledigt, Liste leer.", "P"],
+      ["Mit einer Geschichte, die morgen alle hören wollen.", "E"],
+      ["Mit einem gebuchten Flug in den Süden.", "U"],
+      ["Endlich meine Ruhe.", "M"]] }
+  ];
+  var N = Q.length;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var secStart = $("start"), secQuiz = $("quiz"), secResult = $("result");
+  var idx = 0, answers = [], locked = false, lastText = "";
+
+  // Typenliste auf der Startseite
+  $("typelist").innerHTML = ORDER.map(function (k) {
+    return '<li><span aria-hidden="true">' + TYPES[k].emoji + '</span>' + TYPES[k].name + '</li>';
+  }).join("");
+
+  function setProgress(done) {
+    $("bar").style.width = (done / N * 100) + "%";
+    $("progress").setAttribute("aria-valuenow", String(done));
+  }
+  function show(which) {
+    secStart.hidden = which !== "start";
+    secQuiz.hidden = which !== "quiz";
+    secResult.hidden = which !== "result";
+    $("progress").hidden = which === "start";
+    if (which === "start") $("count").textContent = "";
+  }
+
+  function renderQuestion() {
+    var item = Q[idx];
+    $("count").textContent = "Frage " + (idx + 1) + " von " + N;
+    setProgress(idx);
+    $("qtext").textContent = item.q;
+    var html = "";
+    item.a.forEach(function (opt, i) {
+      var sel = answers[idx] === i ? " sel" : "";
+      html += '<li><button type="button" class="opt' + sel + '" data-i="' + i + '">' + opt[0] + '</button></li>';
+    });
+    $("opts").innerHTML = html;
+    $("back").disabled = idx === 0;
+    locked = false;
+  }
+
+  function startQuiz() {
+    idx = 0; answers = [];
+    show("quiz");
+    renderQuestion();
+    $("qtext").focus({ preventScroll: true });
+    window.scrollTo(0, 0);
+  }
+
+  $("opts").addEventListener("click", function (e) {
+    var btn = e.target.closest(".opt");
+    if (!btn || locked) return;
+    locked = true;
+    answers[idx] = Number(btn.getAttribute("data-i"));
+    Array.prototype.forEach.call($("opts").querySelectorAll(".opt"), function (b) { b.classList.toggle("sel", b === btn); });
+    setTimeout(function () {
+      if (idx < N - 1) {
+        idx++;
+        renderQuestion();
+        $("qtext").focus({ preventScroll: true });
+      } else {
+        showResult();
+      }
+    }, 240);
+  });
+
+  $("back").addEventListener("click", function () {
+    if (idx === 0 || locked) return;
+    idx--;
+    renderQuestion();
+    $("qtext").focus({ preventScroll: true });
+  });
+
+  function showResult() {
+    var score = {}, last = {};
+    ORDER.forEach(function (k) { score[k] = 0; last[k] = -1; });
+    answers.forEach(function (ai, qi) {
+      var k = Q[qi].a[ai][1];
+      score[k]++; last[k] = qi;
+    });
+    var ranked = ORDER.slice().sort(function (a, b) {
+      return score[b] - score[a] || last[b] - last[a];
+    });
+    var win = TYPES[ranked[0]];
+    var matchKey = win.match.split("→")[1];
+
+    $("r-emoji").textContent = win.emoji;
+    $("r-name").textContent = win.name;
+    $("r-tag").textContent = "„" + win.tag + "“";
+    $("r-desc").textContent = win.desc;
+    $("r-power").textContent = win.power;
+    $("r-weak").textContent = win.weak;
+    $("r-match").textContent = TYPES[matchKey].name;
+
+    $("bars").innerHTML = ranked.map(function (k, i) {
+      var pct = Math.round(score[k] / N * 100);
+      return '<li class="' + (i === 0 ? "win" : "") + '">' +
+        '<div class="top"><span><b>' + TYPES[k].emoji + " " + TYPES[k].name + '</b></span><span>' + pct + ' %</span></div>' +
+        '<div class="track"><i style="width:' + pct + '%"></i></div></li>';
+    }).join("");
+
+    lastText = "Ich bin " + win.name + ": „" + win.tag + "“";
+    $("copybox").hidden = true;
+    setProgress(N);
+    $("count").textContent = "Fertig";
+    show("result");
+    $("progress").hidden = false;
+    window.scrollTo(0, 0);
+    $("r-name").focus({ preventScroll: true });
+  }
+
+  $("copy").addEventListener("click", function () {
+    function fallback() {
+      var box = $("copybox"), inp = $("copytext");
+      box.hidden = false;
+      inp.value = lastText;
+      inp.focus(); inp.select();
+      $("copynote").textContent = "Text ist markiert. Mit Strg+C oder Cmd+C kopieren.";
+    }
+    try {
+      navigator.clipboard.writeText(lastText).then(function () {
+        $("copybox").hidden = false;
+        $("copytext").value = lastText;
+        $("copynote").textContent = "In die Zwischenablage kopiert.";
+      }, fallback);
+    } catch (err) { fallback(); }
+  });
+
+  $("go").addEventListener("click", startQuiz);
+  $("again").addEventListener("click", function () {
+    show("start");
+    setProgress(0);
+    window.scrollTo(0, 0);
+  });
+
+  show("start");
+})();
+</script>
+
+</html>
