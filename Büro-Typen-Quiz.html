@@ -1,0 +1,663 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Büro-Typen-Quiz</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+  /* Layout: single column. Questions one at a time, result shown as a Dienstausweis (staff ID card).
+     Palette: Aktenordner-Blau as the one accent, Haftnotiz-Gelb only for the motto note. */
+  :root {
+    --bg: #f2f4f8;
+    --surface: #ffffff;
+    --fg: #14181f;
+    --muted: #566072;
+    --line: #d9dee8;
+    --accent: #2447a8;
+    --accent-fg: #ffffff;
+    --accent-soft: #e4eafa;
+    --note: #fff1a8;
+    --note-fg: #4a3d00;
+    --font-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+    --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151b;
+      --surface: #1b2029;
+      --fg: #eaedf3;
+      --muted: #9aa3b5;
+      --line: #2c3342;
+      --accent: #8fb0ff;
+      --accent-fg: #0c1630;
+      --accent-soft: #1e2a47;
+      --note: #5a4a10;
+      --note-fg: #ffe9a0;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12151b;
+    --surface: #1b2029;
+    --fg: #eaedf3;
+    --muted: #9aa3b5;
+    --line: #2c3342;
+    --accent: #8fb0ff;
+    --accent-fg: #0c1630;
+    --accent-soft: #1e2a47;
+    --note: #5a4a10;
+    --note-fg: #ffe9a0;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    padding-block: 28px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+  header { display: flex; flex-direction: column; gap: 6px; }
+  .kicker { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: 28px; line-height: 1.15; margin: 0; text-wrap: balance; }
+  .sub { color: var(--muted); margin: 0; font-size: 15px; }
+
+  .progress { display: flex; flex-direction: column; gap: 8px; }
+  .progress-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .bar > span { display: block; height: 100%; background: var(--accent); transition: width .3s ease; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+  .q { font-family: var(--font-display); font-weight: 500; font-size: 21px; line-height: 1.3; margin: 0; text-wrap: balance; }
+  .opts { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+    font: inherit; color: var(--fg); background: var(--surface);
+    border: 1.5px solid var(--line); border-radius: 10px; padding: 12px 14px; cursor: pointer; min-width: 0;
+  }
+  .opt:hover { border-color: var(--accent); }
+  .opt.sel { border-color: var(--accent); background: var(--accent-soft); }
+  .opt:focus-visible, .btn:focus-visible, .link:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .letter {
+    flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+    font-size: 13px; font-weight: 600; background: var(--accent-soft); color: var(--accent);
+  }
+  .opt.sel .letter { background: var(--accent); color: var(--accent-fg); }
+  .opt-text { min-width: 0; overflow-wrap: anywhere; }
+
+  .nav { display: flex; justify-content: space-between; align-items: center; min-height: 24px; }
+  .link { font: inherit; font-size: 14px; background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; }
+  .link[hidden] { display: none; }
+
+  .btn { font: inherit; font-weight: 600; background: var(--accent); color: var(--accent-fg); border: 0; border-radius: 10px; padding: 12px 22px; cursor: pointer; }
+  .btn.ghost { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* Dienstausweis */
+  .id { background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px; overflow: hidden; min-width: 0; }
+  .id-top {
+    background: var(--accent); color: var(--accent-fg); padding: 10px 20px;
+    display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    font-size: 12px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600;
+  }
+  .id-body { padding: 22px 20px; display: flex; flex-direction: column; gap: 18px; }
+  .id-head { display: flex; gap: 16px; align-items: center; min-width: 0; }
+  .art { display: block; width: 100%; height: auto; }
+  .id-label { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .id-name { font-family: var(--font-display); font-weight: 700; font-size: 28px; line-height: 1.12; margin: 2px 0 0; text-wrap: balance; overflow-wrap: anywhere; }
+  .motto { background: var(--note); color: var(--note-fg); border-radius: 6px; padding: 10px 14px; font-weight: 600; margin: 0; }
+  .desc { margin: 0; }
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; margin: 0; }
+  .facts div { min-width: 0; }
+  .facts dt { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .facts dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+  .facts .wide { grid-column: 1 / -1; }
+
+  .scores { display: flex; flex-direction: column; gap: 10px; }
+  .scores h3, .all h3 { font-family: var(--font-display); font-size: 16px; margin: 0; }
+  .srow { display: grid; grid-template-columns: minmax(0, 1fr) 40px; gap: 6px 12px; align-items: center; font-size: 14px; }
+  .srow .sname { grid-column: 1 / -1; }
+  .sbar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+  .sbar span { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+  .spts { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  details { border-top: 1px solid var(--line); padding-top: 14px; }
+  summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+  .alllist { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; }
+  .alllist li { padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; min-width: 0; }
+  .alllist li:first-child { border-top: 0; }
+  .alllist b { display: block; font-weight: 600; }
+  .alllist span { color: var(--muted); overflow-wrap: anywhere; }
+
+  .status { font-size: 14px; color: var(--muted); margin: 0; min-height: 21px; }
+  .note { font-size: 13px; color: var(--muted); margin: 0; }
+
+  @media (max-width: 480px) {
+    .card { padding: 18px; }
+    h1 { font-size: 24px; }
+    .q { font-size: 19px; }
+    .id-name { font-size: 24px; }
+    .facts { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { .bar > span { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="kicker">Zwanzig Fragen, sechzehn Typen</div>
+    <h1>Büro-Typen-Quiz</h1>
+    <p class="sub">Beantworte spontan, was du im Büroalltag am ehesten tust. Am Ende bekommst du deinen Dienstausweis.</p>
+  </header>
+
+  <div class="progress">
+    <div class="progress-row"><span id="pos">Frage 1 von 20</span><span id="pct">0 %</span></div>
+    <div class="bar"><span id="fill" style="width:0%"></span></div>
+  </div>
+
+  <main id="app"></main>
+
+  <p class="note">Nur zum Spaß und nicht wissenschaftlich. Die Typen sind für alle gedacht, egal ob Kollege oder Kollegin.</p>
+</div>
+
+<script>
+  var TYPES = {
+    K: { n: "Der Kaffee-Junkie", m: "K", motto: "Erst Kaffee, dann Menschen.",
+      d: "Dein Tag hat zwei Zustände: vor dem ersten Kaffee und danach. Die Kaffeemaschine kennt dich besser als jede Kollegin.",
+      st: "Läuft zuverlässig an, sobald die Tasse voll ist.", sw: "Ohne Koffein gibt es nur Notbetrieb.",
+      ln: "Ich hole mir nur schnell einen Kaffee.", pa: "E" },
+    A: { n: "Der Profi-Aufschieber", m: "A", motto: "Morgen ist auch noch ein Tag.",
+      d: "Unter Zeitdruck wirst du zum Genie. Bis dahin sind Schreibtisch, Ablage und Topfpflanzen vorbildlich in Ordnung.",
+      st: "Erstaunliche Leistung in den letzten zwei Stunden vor der Frist.", sw: "Die ersten Tage nach der Aufgabenverteilung.",
+      ln: "Das mache ich gleich. Wirklich.", pa: "P" },
+    U: { n: "Der Uhrzeit-Wächter", m: "U", motto: "Pünktlich ist halb gearbeitet.",
+      d: "Du kommst auf die Minute und gehst auf die Minute. Pausen sind heilig, Überstunden Verhandlungssache.",
+      st: "Verlässlich wie eine Atomuhr.", sw: "Wird unruhig, wenn ein Meeting überzieht.",
+      ln: "Ich habe um 16:30 Uhr noch einen Termin. Mit meinem Feierabend.", pa: "V" },
+    M: { n: "Der Meeting-Minister", m: "M", motto: "Das besprechen wir kurz.",
+      d: "Dein Kalender ist ein Mosaik aus Terminen. Du lädst gern ein, moderierst gern und hast fast immer noch einen Punkt auf der Agenda.",
+      st: "Am Ende sitzen alle am selben Tisch.", sw: "Das Meeting hätte eine Mail sein können.",
+      ln: "Lasst uns kurz abstimmen.", pa: "P" },
+    S: { n: "Der Alles-Sammler", m: "S", motto: "Kann man noch brauchen.",
+      d: "In deiner Schublade liegen Gummibänder, Kabel, Haftnotizen und Visitenkarten aus dem Jahr 2011. Und genau dann, wenn jemand etwas sucht, hast du es.",
+      st: "Hat für jede Notlage ein Ersatzteil.", sw: "Ausmisten findet nie statt.",
+      ln: "Ich glaube, ich habe da noch eins.", pa: "X" },
+    X: { n: "Der Excel-Zauberer", m: "X", motto: "Dafür gibt es eine Formel.",
+      d: "Du denkst in Zellen, Filtern und Pivot-Tabellen. Wo andere abtippen, baust du etwas, das sich von selbst rechnet.",
+      st: "Spart dem Team Stunden.", sw: "Wenn du im Urlaub bist, versteht niemand die Tabelle.",
+      ln: "Gib mir fünf Minuten, ich baue dir eine Formel.", pa: "S" },
+    H: { n: "Der Büro-Heilige", m: "H", motto: "Ich mach das schon.",
+      d: "Du springst ein, hörst zu und sagst selten nein. Ohne dich wäre in der Teeküche längst das Chaos ausgebrochen.",
+      st: "Jeder fühlt sich bei dir gut aufgehoben.", sw: "Hat zu viel auf dem Teller, weil Nein sagen schwerfällt.",
+      ln: "Kein Problem, das übernehme ich.", pa: "U" },
+    D: { n: "Der Drama-Manager", m: "D", motto: "Das glaubt ihr nicht.",
+      d: "Du weißt als Erste oder Erster, was passiert ist, und erzählst es in drei Akten. Das Büro ist deine Bühne und der Flurfunk dein Medium.",
+      st: "Sorgt immer für Gesprächsstoff.", sw: "Verwechselt manchmal Gerücht und Fakt.",
+      ln: "Setz dich lieber hin.", pa: "T" },
+    B: { n: "Der Büro-Superheld", m: "B", motto: "Wo ist das Problem?",
+      d: "Der Drucker streikt, der Server hängt, der Kunde ist verärgert: Du bist schon unterwegs. Einen Umhang brauchst du nicht, das Ladekabel reicht.",
+      st: "Rettet Projekte kurz vor dem Absturz.", sw: "Wartet nicht, bis jemand um Hilfe bittet.",
+      ln: "Ich kümmere mich drum.", pa: "P" },
+    T: { n: "Der Büro-Detektiv", m: "T", motto: "Da stimmt doch etwas nicht.",
+      d: "Du merkst, wer wann Kaffee geholt hat, welcher Termin plötzlich verschoben wurde und wo der Tacker geblieben ist. Nichts bleibt lange unbemerkt.",
+      st: "Findet jede verlorene Datei.", sw: "Sieht manchmal Zusammenhänge, die es nicht gibt.",
+      ln: "Interessant, dass der Termin genau jetzt verschoben wurde.", pa: "S" },
+    I: { n: "Der Büro-Influencer", m: "I", motto: "Das muss in den Teamchat.",
+      d: "Ob Büropflanze, Geburtstagskuchen oder neue Kaffeetasse: Du dokumentierst alles. Deine Beiträge im Chat haben mehr Reaktionen als jede Rundmail.",
+      st: "Hält die Stimmung im Team lebendig.", sw: "Antwortet schneller auf Reaktionen als auf Mails.",
+      ln: "Moment, erst ein Foto.", pa: "E" },
+    O: { n: "Der Dauer-Überforderte", m: "Ü", motto: "Wie soll ich das alles schaffen?",
+      d: "Die To-do-Liste wächst schneller, als du abhaken kannst. Du bist sehr bemüht, selten fertig und fast immer zwischen zwei Anrufen.",
+      st: "Gibt wirklich alles.", sw: "Kommt kaum zum Durchatmen.",
+      ln: "Ich kann nicht mehr, aber das mache ich noch schnell.", pa: "P" },
+    W: { n: "Der Besserwisser", m: "B", motto: "Eigentlich ist das so geregelt.",
+      d: "Du kennst die Vorschrift, das Datum und die Ausnahme von der Ausnahme. Meistens hast du sogar recht, und alle wissen es.",
+      st: "Fachwissen, auf das man sich verlassen kann.", sw: "Der Ton trifft nicht immer den Moment.",
+      ln: "Das habe ich schon letztes Jahr gesagt.", pa: "E" },
+    V: { n: "Der Urlaubsreife", m: "U", motto: "Noch 23 Tage.",
+      d: "Dein Kalender zeigt den nächsten Urlaub in Großbuchstaben. Der Körper sitzt im Büro, der Kopf irgendwo mit Meerblick.",
+      st: "Plant Auszeiten wie ein Profi.", sw: "Montags geht die Konzentration gegen null.",
+      ln: "Was ist in zwei Wochen? Genau: Urlaub.", pa: "U" },
+    P: { n: "Der Produktivitäts-Profi", m: "P", motto: "Fertig ist besser als perfekt.",
+      d: "Du priorisierst, hakst ab und gehst pünktlich nach Hause. Was andere in der ganzen Woche schaffen, hast du am Mittwoch erledigt.",
+      st: "Schafft viel, ohne Hektik.", sw: "Hat wenig Verständnis für Aufschieber.",
+      ln: "Ich blocke mir dafür eine Stunde im Kalender.", pa: "A" },
+    E: { n: "Der Büro-Entertainer", m: "E", motto: "Montag? Ich sorge für Stimmung.",
+      d: "Du erzählst Witze, bringst Kuchen mit und machst aus jeder Mittagspause eine kleine Show. Ohne dich wäre das Team nur ein Team.",
+      st: "Macht schlechte Tage erträglicher.", sw: "Das Meeting wird schnell zur Bühne.",
+      ln: "Kennt ihr den schon?", pa: "K" }
+  };
+  var ORDER = ["K","A","U","M","S","X","H","D","B","T","I","O","W","V","P","E"];
+
+  // Jede Antwort: p = Haupttyp (2 Punkte), s = Nebentyp (1 Punkt)
+  var QS = [
+    { q: "Der Arbeitstag beginnt. Was passiert als Erstes?", o: [
+      { t: "Kaffeemaschine. Alles andere kommt danach.", p: "K", s: "V" },
+      { t: "Ich schaue auf meine Prioritätenliste und lege los.", p: "P", s: "U" },
+      { t: "Ich bin pünktlich auf die Minute am Platz.", p: "U", s: "H" },
+      { t: "Ich begrüße alle mit einem Spruch und bringe Stimmung ins Büro.", p: "E", s: "I" } ] },
+    { q: "Eine Aufgabe mit Frist in zwei Wochen landet auf deinem Tisch. Was machst du?", o: [
+      { t: "Ich fange nächste Woche an. Oder übernächste.", p: "A", s: "O" },
+      { t: "Ich lade erst einmal alle zu einer Abstimmung ein.", p: "M", s: "D" },
+      { t: "Ich suche alle alten Unterlagen dazu heraus. Vielleicht ist etwas Nützliches dabei.", p: "S", s: "T" },
+      { t: "Ich baue eine Tabelle mit Formeln, die vieles automatisch erledigt.", p: "X", s: "P" } ] },
+    { q: "Eine Kollegin sitzt aufgelöst in der Teeküche. Und nun?", o: [
+      { t: "Ich höre zu, bringe ein Taschentuch und übernehme einen Teil ihrer Arbeit.", p: "H", s: "B" },
+      { t: "Ich frage nach den Details. Kurz darauf weiß das halbe Haus Bescheid.", p: "D", s: "T" },
+      { t: "Ich stehe sofort bereit und löse das Problem, wo auch immer es liegt.", p: "B", s: "H" },
+      { t: "Ich kombiniere: Wer hat wann was gesagt? Da steckt etwas dahinter.", p: "T", s: "D" } ] },
+    { q: "Wie sieht dein Posteingang aus?", o: [
+      { t: "Ist mir egal, ich bin lieber im Teamchat und teile dort Fotos und Neuigkeiten.", p: "I", s: "E" },
+      { t: "Über 300 ungelesene Mails, und jede Minute kommen neue.", p: "O", s: "A" },
+      { t: "Aufgeräumt. Und wer falsche Betreffzeilen wählt, bekommt von mir einen Hinweis.", p: "W", s: "P" },
+      { t: "Gerade unwichtig. Ich zähle die Tage bis zum nächsten Urlaub.", p: "V", s: "K" } ] },
+    { q: "Mittwoch, 14 Uhr. Wie ist dein Energielevel?", o: [
+      { t: "Dritte Tasse Kaffee, ich vibriere leicht.", p: "K", s: "O" },
+      { t: "Hochmotiviert, nur nicht für die Aufgabe, die gerade ansteht.", p: "A", s: "V" },
+      { t: "Ich hetze von Meeting zu Meeting, und gleich kommt das nächste.", p: "M", s: "O" },
+      { t: "Ich rette heute schon zum dritten Mal ein Projekt.", p: "B", s: "O" } ] },
+    { q: "Wie sieht dein Schreibtisch aus?", o: [
+      { t: "Ein kleiner Wald aus Stiften, Zetteln, Kabeln und Tassen. Ich brauche alles davon.", p: "S", s: "A" },
+      { t: "Zwei Monitore, und auf einem davon laufen Tabellen.", p: "X", s: "P" },
+      { t: "Ordentlich, mit einer Blume für die Kolleginnen und Kollegen.", p: "H", s: "E" },
+      { t: "Egal. Wichtig ist, was ich heute schon alles erlebt habe.", p: "D", s: "E" } ] },
+    { q: "Im Flur kursiert ein Gerücht über eine Umstrukturierung. Wie reagierst du?", o: [
+      { t: "Ich sammle Hinweise und vergleiche Termine, bis ich die Wahrheit kenne.", p: "T", s: "W" },
+      { t: "Ich teile es sofort im Chat, mit passendem Meme.", p: "I", s: "D" },
+      { t: "Das auch noch. Ich schaffe doch jetzt schon kaum alles.", p: "O", s: "D" },
+      { t: "Das habe ich vor Monaten schon gesagt.", p: "W", s: "T" } ] },
+    { q: "Freitag, 15 Uhr. Was machst du gerade?", o: [
+      { t: "Mit dem Kopf bin ich schon am Strand.", p: "V", s: "K" },
+      { t: "Alles erledigt, die Planung für Montag steht.", p: "P", s: "U" },
+      { t: "Ich schaue auf die Uhr. Jede Minute zählt.", p: "U", s: "V" },
+      { t: "Ich bringe Kuchen mit und sorge für Wochenendstimmung.", p: "E", s: "H" } ] },
+    { q: "Was liegt in deiner Schreibtischschublade?", o: [
+      { t: "Kaffeekapseln, Teebeutel, Zucker und ein Notfallvorrat Koffein.", p: "K", s: "S" },
+      { t: "Angefangene Sachen, die ich bald fertig mache.", p: "A", s: "S" },
+      { t: "Ein Block voller Protokolle und Terminnotizen.", p: "M", s: "X" },
+      { t: "Alles: Büroklammern, Gummibänder, alte Visitenkarten, Ersatzladekabel.", p: "S", s: "A" } ] },
+    { q: "Dein Chef fragt: „Kannst du das schnell übernehmen?“", o: [
+      { t: "Ja, ich schreibe dafür ein Makro, dann läuft es von allein.", p: "X", s: "P" },
+      { t: "Natürlich, ich sage selten nein.", p: "H", s: "B" },
+      { t: "Schon wieder! Das muss ich gleich jemandem erzählen.", p: "D", s: "I" },
+      { t: "Gib her. Ich bin sofort dran.", p: "B", s: "H" } ] },
+    { q: "Dein Tacker ist verschwunden. Was jetzt?", o: [
+      { t: "Ich verfolge die Spur: Wer war zuletzt an meinem Platz?", p: "T", s: "W" },
+      { t: "Ich poste ein Foto vom leeren Platz im Chat. „Fahndung“.", p: "I", s: "E" },
+      { t: "Das fehlt mir jetzt auch noch. Ich kann nicht mehr.", p: "O", s: "A" },
+      { t: "Ich habe schon vorher gesagt, dass man alles beschriften sollte.", p: "W", s: "P" } ] },
+    { q: "Welcher Satz beschreibt dich im Büro am besten?", o: [
+      { t: "Ich brauche dringend Urlaub.", p: "V", s: "O" },
+      { t: "Ich schaffe in vier Stunden, was andere in acht schaffen.", p: "P", s: "X" },
+      { t: "Pünktlich kommen, pünktlich gehen.", p: "U", s: "H" },
+      { t: "Ich bin der Grund, warum der Montag erträglich ist.", p: "E", s: "I" } ] },
+    { q: "Es ist Mittagspause. Was machst du?", o: [
+      { t: "Erst ein Kaffee, dann überlege ich, ob ich überhaupt etwas esse.", p: "K", s: "E" },
+      { t: "Ich esse am Schreibtisch und schiebe dabei die Mail weiter vor mir her, die ich schreiben wollte.", p: "A", s: "O" },
+      { t: "Auf die Minute pünktlich in die Pause und auf die Minute pünktlich zurück.", p: "U", s: "P" },
+      { t: "Ich sitze mit dem Team in der Kantine, und wir besprechen noch kurz zwei Punkte.", p: "M", s: "D" } ] },
+    { q: "Im Team wird ein neues Programm eingeführt. Wie gehst du damit um?", o: [
+      { t: "Ich sammle alle Handbücher und Anleitungen dazu. Man weiß ja nie.", p: "S", s: "T" },
+      { t: "Ich suche sofort die Funktionen, mit denen man Arbeit automatisieren kann.", p: "X", s: "P" },
+      { t: "Ich zeige allen geduldig, wie es geht, auch beim dritten Mal.", p: "H", s: "B" },
+      { t: "Das wird ein Desaster, ich sage es euch. Und dann erzähle ich, warum.", p: "D", s: "W" } ] },
+    { q: "Das WLAN fällt aus, mitten in einer wichtigen Frist.", o: [
+      { t: "Ich laufe schon zum Serverraum und rette, was zu retten ist.", p: "B", s: "T" },
+      { t: "Ich prüfe, was kurz vorher passiert ist und wer zuletzt etwas verändert hat.", p: "T", s: "W" },
+      { t: "Ich poste ein Foto vom Fehlerbildschirm in den Chat.", p: "I", s: "E" },
+      { t: "Das war es dann. Die Frist schaffe ich nie.", p: "O", s: "A" } ] },
+    { q: "Ein Kollege nennt in der Besprechung eine Zahl, die nicht ganz stimmt.", o: [
+      { t: "Ich melde mich sofort: Das ist so nicht richtig.", p: "W", s: "T" },
+      { t: "Ich nicke, mein Kopf ist gerade in der Südsee.", p: "V", s: "K" },
+      { t: "Ich kläre es danach kurz unter vier Augen, damit es zügig weitergeht.", p: "P", s: "U" },
+      { t: "Ich mache einen Scherz, damit es nicht peinlich wird.", p: "E", s: "H" } ] },
+    { q: "Wie sieht dein Kalender für nächste Woche aus?", o: [
+      { t: "Alles, was ich diese Woche nicht geschafft habe, steht noch einmal darin.", p: "A", s: "O" },
+      { t: "Auf Papier, mit Zetteln und Haftnotizen rundherum.", p: "S", s: "A" },
+      { t: "Mit einem Termin für den nächsten Teamausflug, den ich gleich im Chat ankündige.", p: "I", s: "E" },
+      { t: "Ein einziger Eintrag, rot markiert: Urlaub.", p: "V", s: "U" } ] },
+    { q: "Was ist dein liebster Gegenstand im Büro?", o: [
+      { t: "Eine zuverlässige Uhr. Die Zeit ist mein Fixpunkt.", p: "U", s: "H" },
+      { t: "Zwei große Monitore und eine gute Tastatur.", p: "X", s: "P" },
+      { t: "Ein kleines Notizbuch, in dem ich Beobachtungen festhalte.", p: "T", s: "W" },
+      { t: "Mein Kalender mit Zeitblöcken und Häkchen.", p: "P", s: "U" } ] },
+    { q: "Der Chef setzt spontan ein Meeting an. Deine erste Reaktion?", o: [
+      { t: "Endlich. Ich bereite sofort eine Tagesordnung vor.", p: "M", s: "P" },
+      { t: "Ich sage zu, auch wenn ich eigentlich keine Zeit habe.", p: "H", s: "O" },
+      { t: "Noch ein Termin. Wann soll ich dann bitte arbeiten?", p: "O", s: "A" },
+      { t: "Ich bringe Snacks mit, damit die Stimmung stimmt.", p: "E", s: "K" } ] },
+    { q: "Wie klingt dein typischer Satz am Telefon?", o: [
+      { t: "Du glaubst nicht, was heute schon alles passiert ist.", p: "D", s: "I" },
+      { t: "Ich kümmere mich sofort darum, bleib dran.", p: "B", s: "H" },
+      { t: "Das ist zwar nicht mein Bereich, aber ich erkläre es dir genau.", p: "W", s: "T" },
+      { t: "Moment, ich hole mir erst noch einen Kaffee, dann reden wir.", p: "K", s: "V" } ] }
+  ];
+  var LETTERS = ["A", "B", "C", "D"];
+
+  /* ---------- Titel mit Artikel (inklusiv) ---------- */
+  var INNEN = { A: 1, U: 1, M: 1, S: 1, X: 1, D: 1, B: 1, T: 1, I: 1, W: 1, E: 1 };
+  function youAre(key, t) {
+    var bare = key === "W" ? "Besserwisser" : t.n.replace(/^Der /, "");
+    return "der/die " + bare + (INNEN[key] ? "/in" : "");
+  }
+
+  /* ---------- Illustrationen (eigene Figuren, reine SVG-Formen) ---------- */
+  var HEART = "M0 8C-12 0-10-10-3-10C0-10 0-7 0-6C0-7 0-10 3-10C10-10 12 0 0 8Z";
+  function heart(x, y, s) {
+    return '<path transform="translate(' + x + ' ' + y + ') scale(' + s + ')" d="' + HEART + '" fill="var(--accent)"/>';
+  }
+  function arm(x1, y1, x2, y2) {
+    var d = 'M' + x1 + ' ' + y1 + 'L' + x2 + ' ' + y2;
+    return '<path d="' + d + '" stroke="var(--fg)" stroke-width="13"/>' +
+      '<path d="' + d + '" stroke="var(--accent)" stroke-width="8.5"/>' +
+      '<circle cx="' + x2 + '" cy="' + y2 + '" r="5" fill="var(--surface)"/>';
+  }
+  function txt(x, y, s, size, weight, fill) {
+    return '<text x="' + x + '" y="' + y + '" text-anchor="middle" font-size="' + size + '" font-weight="' + (weight || 600) +
+      '" fill="' + (fill || "var(--fg)") + '" stroke="none" font-family="Inter, system-ui, sans-serif">' + s + '</text>';
+  }
+  function bubble(x, y, w, h, s, size) {
+    return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (h / 2) + '" fill="var(--surface)"/>' +
+      txt(x + w / 2, y + h / 2 + size * 0.35, s, size, 600);
+  }
+  function clock(cx, cy, r, hDeg, mDeg) {
+    var s = '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="var(--surface)"/>';
+    var i, a, p = Math.PI / 180;
+    for (i = 0; i < 12; i++) {
+      a = i * 30 * p;
+      s += '<path d="M' + (cx + Math.sin(a) * (r - 5)).toFixed(1) + ' ' + (cy - Math.cos(a) * (r - 5)).toFixed(1) +
+        'L' + (cx + Math.sin(a) * (r - 2)).toFixed(1) + ' ' + (cy - Math.cos(a) * (r - 2)).toFixed(1) + '" stroke-width="1.8"/>';
+    }
+    s += '<path d="M' + cx + ' ' + cy + 'L' + (cx + Math.sin(hDeg * p) * r * 0.5).toFixed(1) + ' ' + (cy - Math.cos(hDeg * p) * r * 0.5).toFixed(1) + '" stroke-width="3.2"/>';
+    s += '<path d="M' + cx + ' ' + cy + 'L' + (cx + Math.sin(mDeg * p) * r * 0.78).toFixed(1) + ' ' + (cy - Math.cos(mDeg * p) * r * 0.78).toFixed(1) + '" stroke-width="2.2"/>';
+    return s + '<circle cx="' + cx + '" cy="' + cy + '" r="2" fill="var(--fg)"/>';
+  }
+  function stack(x, n, w) {
+    var s = "", i;
+    for (i = 0; i < n; i++) {
+      s += '<rect x="' + (x + (i % 2 ? 4 : 0)) + '" y="' + (104 - (i + 1) * 11) + '" width="' + w + '" height="11" fill="var(--surface)"/>';
+    }
+    return s;
+  }
+  function envelope(x, y) {
+    return '<rect x="' + x + '" y="' + y + '" width="22" height="15" fill="var(--surface)"/><path d="M' + x + ' ' + y + 'l11 8 11-8"/>';
+  }
+
+  var EYES = {
+    n: '<circle cx="113" cy="58" r="2.2" fill="var(--fg)" stroke="none"/><circle cx="127" cy="58" r="2.2" fill="var(--fg)" stroke="none"/>',
+    w: '<circle cx="113" cy="58" r="4.5" fill="var(--surface)" stroke-width="1.8"/><circle cx="127" cy="58" r="4.5" fill="var(--surface)" stroke-width="1.8"/><circle cx="113" cy="58" r="1.8" fill="var(--fg)" stroke="none"/><circle cx="127" cy="58" r="1.8" fill="var(--fg)" stroke="none"/>',
+    h: '<path d="M108.5 59q4.5-5 9 0M122.5 59q4.5-5 9 0"/>',
+    x: ''
+  };
+  var MOUTH = {
+    s: '<path d="M112 67Q120 74 128 67"/>',
+    g: '<path d="M111 66Q120 79 129 66Z" fill="var(--surface)"/>',
+    f: '<path d="M114 69H126"/>',
+    o: '<ellipse cx="120" cy="69" rx="5" ry="5.5" fill="var(--fg)"/>',
+    m: '<path d="M113 69Q121 71 128 65"/>',
+    v: '<path d="M111 69q3-4 6 0t6 0t6 0"/>'
+  };
+
+  var ART = {
+    /* Kaffee-Junkie: drei Tassen, Kaffeemaschine, zittrige Augen */
+    K: { e: 'w', m: 'f',
+      back: '<path d="M88 52l-9-3M88 62l-10 1M152 52l9-3M152 62l10 1"/>',
+      front: '<g fill="var(--surface)"><rect x="22" y="90" width="15" height="14" rx="3"/><rect x="44" y="90" width="15" height="14" rx="3"/><rect x="66" y="90" width="15" height="14" rx="3"/></g>' +
+        '<path d="M37 94h3a3.5 3.5 0 0 1 0 7h-3M59 94h3a3.5 3.5 0 0 1 0 7h-3M81 94h3a3.5 3.5 0 0 1 0 7h-3M29 84c-3-4 3-6 0-11M51 84c-3-4 3-6 0-11"/>' +
+        '<rect x="166" y="62" width="40" height="42" rx="5" fill="var(--muted)"/><rect x="174" y="70" width="24" height="12" rx="2" fill="var(--surface)"/><path d="M186 86v6"/><circle cx="198" cy="95" r="2.5" fill="var(--accent)"/>' },
+
+    /* Profi-Aufschieber: Papierstapel, Handy, Papierflieger, "morgen…" */
+    A: { e: 'n', m: 'm',
+      back: bubble(146, 24, 66, 24, 'morgen…', 11),
+      front: '<rect x="24" y="92" width="44" height="12" fill="var(--surface)"/><rect x="28" y="82" width="44" height="10" fill="var(--surface)"/><rect x="22" y="72" width="44" height="10" fill="var(--surface)"/>' +
+        '<path d="M184 74l30-14-8 26-8-9-8 6z" fill="var(--surface)"/>' +
+        '<rect x="112" y="84" width="16" height="20" rx="3" fill="var(--fg)"/><rect x="115" y="87" width="10" height="13" rx="1.5" fill="var(--surface)" stroke="none"/>' },
+
+    /* Uhrzeit-Wächter: große Wanduhr auf 16:30, Wecker, gepackte Tasche */
+    U: { e: 'n', m: 'f',
+      back: clock(56, 48, 26, 135, 180),
+      head: '<path d="M107 51l10 3M133 51l-10 3"/>',
+      front: '<circle cx="36" cy="80" r="4" fill="var(--surface)"/><circle cx="52" cy="80" r="4" fill="var(--surface)"/><circle cx="44" cy="92" r="11" fill="var(--surface)"/><path d="M44 92v-6M44 92l4 3"/>' +
+        '<rect x="170" y="80" width="36" height="24" rx="4" fill="var(--muted)"/><path d="M180 80v-6a8 8 0 0 1 16 0v6"/>' },
+
+    /* Meeting-Minister: Flipchart mit Zeiger, vollgepackter Kalender */
+    M: { e: 'n', m: 's',
+      back: '<path d="M34 72L28 104M72 72L78 104"/><rect x="22" y="22" width="62" height="50" fill="var(--surface)"/><path d="M30 34h8M30 46h8M30 58h8M44 34h30M44 46h26M44 58h18"/>' +
+        '<rect x="160" y="26" width="58" height="62" fill="var(--surface)"/><path d="M160 40h58M179 40v48M198 40v48"/>' +
+        '<g fill="var(--accent)" stroke="none"><rect x="164" y="43" width="12" height="12"/><rect x="164" y="60" width="12" height="20"/><rect x="183" y="48" width="12" height="16"/><rect x="183" y="68" width="12" height="14"/><rect x="202" y="43" width="12" height="22"/><rect x="202" y="70" width="12" height="12"/></g>',
+      arms: arm(98, 86, 74, 64) + '<path d="M74 64L58 46" stroke-width="2.5"/>' },
+
+    /* Alles-Sammler: Kartons, Klebezettel, Stiftebecher, Klebebandrolle, Kabel */
+    S: { e: 'n', m: 's',
+      back: '<g fill="var(--note)"><rect x="150" y="26" width="20" height="20"/><rect x="176" y="34" width="20" height="20" transform="rotate(8 186 44)"/><rect x="198" y="22" width="20" height="20"/></g>' +
+        '<rect x="20" y="74" width="42" height="30" fill="var(--note)"/><rect x="26" y="54" width="30" height="20" fill="var(--note)"/><path d="M20 84h42M26 62h30"/>',
+      front: '<rect x="172" y="84" width="18" height="20" rx="2" fill="var(--surface)"/><path d="M176 84l-3-14M181 84v-18M186 84l4-12"/>' +
+        '<circle cx="152" cy="95" r="9" fill="var(--surface)"/><circle cx="152" cy="95" r="3.5"/><path d="M196 104c0-12 14-12 14 0"/>' },
+
+    /* Excel-Zauberer: Zaubererhut, Zauberstab, Monitor mit Tabelle */
+    X: { e: 'n', m: 's',
+      back: '<rect x="20" y="40" width="68" height="50" rx="3" fill="var(--surface)"/><rect x="42" y="64" width="22" height="13" fill="var(--accent)" stroke="none"/><path d="M20 52h68M42 52v38M64 52v38M20 64h68M20 77h68M54 90v12M40 102h28"/>' +
+        txt(54, 49, '=SUMME()', 8, 600),
+      arms: arm(142, 88, 164, 70) + '<path d="M164 70L184 50" stroke-width="3"/><path d="M186 42v12M180 48h12M200 70v10M195 75h10M210 40v8M206 44h8" stroke-width="2"/>',
+      head: '<path d="M102 46L120 8l18 38z" fill="var(--accent)"/><path d="M97 47h46" stroke-width="4"/><path d="M120 20l2 4 4 .5-3 3 1 4-4-2-4 2 1-4-3-3 4-.5z" fill="var(--note)" stroke-width="1.2"/>' },
+
+    /* Büro-Heilige: Heiligenschein, Herzen, Taschentücher, Pflanze */
+    H: { e: 'h', m: 's',
+      back: '<path d="M96 28l-8-5M144 28l8-5M120 20v-8" stroke="var(--muted)"/>' + heart(178, 52, 1.2) + heart(202, 38, 0.8) + heart(40, 44, 0.9),
+      head: '<ellipse cx="120" cy="35" rx="20" ry="6" fill="var(--note)"/><circle cx="108" cy="66" r="3" fill="var(--accent)" stroke="none" opacity=".35"/><circle cx="132" cy="66" r="3" fill="var(--accent)" stroke="none" opacity=".35"/>',
+      front: '<rect x="24" y="90" width="30" height="14" rx="2" fill="var(--surface)"/><path d="M34 90c0-8 4-12 8-12s2 6 0 12" fill="var(--surface)"/>' +
+        '<path d="M170 90h22l-3 14h-16z" fill="var(--accent)"/><path d="M181 90c-12-4-14-16-10-22 8 2 12 10 10 22zM181 90c10-6 14-16 12-24-8 2-14 12-12 24z" fill="var(--surface)"/>' },
+
+    /* Drama-Manager: Hände hoch, offener Mund, Sprechblasen, Popcorn */
+    D: { e: 'w', m: 'o',
+      back: bubble(18, 24, 40, 26, '!!', 18) + bubble(182, 24, 40, 26, '?!', 18),
+      arms: arm(98, 86, 76, 60) + arm(142, 86, 164, 60),
+      head: '<path d="M107 49l8-4M133 49l-8-4"/>',
+      front: '<g transform="rotate(-6 49 93)"><rect x="34" y="80" width="30" height="24" fill="var(--surface)"/><path d="M39 88h20M39 94h14"/></g>' +
+        '<circle cx="181" cy="74" r="6" fill="var(--note)"/><circle cx="190" cy="69" r="7" fill="var(--note)"/><circle cx="199" cy="74" r="6" fill="var(--note)"/>' +
+        '<path d="M176 76h28l-4 28h-20z" fill="var(--surface)"/><path d="M183 76l1.5 28M197 76l-1.5 28" stroke="var(--accent)"/>' },
+
+    /* Büro-Superheld: Umhang, Maske, Emblem, Faust, kaputter Drucker */
+    B: { e: 'x', m: 'g',
+      back: '<path d="M96 80C78 74 62 78 46 66C50 84 56 96 96 98Z" fill="var(--muted)"/><path d="M144 80C162 74 178 78 194 66C190 84 184 96 144 98Z" fill="var(--muted)"/>',
+      arms: arm(142, 86, 160, 58),
+      head: '<rect x="104" y="52" width="32" height="10" rx="5" fill="var(--fg)"/><circle cx="113" cy="57" r="2" fill="var(--surface)" stroke="none"/><circle cx="127" cy="57" r="2" fill="var(--surface)" stroke="none"/>' +
+        '<circle cx="120" cy="92" r="9" fill="var(--note)"/><path d="M120 86l2 4 4 .5-3 3 1 4-4-2-4 2 1-4-3-3 4-.5z" fill="var(--fg)" stroke="none"/>',
+      front: '<rect x="166" y="80" width="44" height="24" rx="4" fill="var(--surface)"/><rect x="174" y="72" width="28" height="8" fill="var(--surface)"/><path d="M180 72l3-9 5 5 5-7 4 11" fill="var(--surface)"/>' +
+        '<path d="M196 30l12 20h-24z" fill="var(--note)"/><path d="M196 37v7M196 47.5v.5" stroke-width="3"/>' },
+
+    /* Büro-Detektiv: Schiebermütze, Lupe, Pinnwand mit Faden, fehlender Tacker */
+    T: { e: 'n', m: 'f',
+      back: '<rect x="18" y="22" width="76" height="54" rx="3" fill="var(--surface)"/><path d="M32 36L62 32L80 56L40 60Z" stroke="var(--accent)" stroke-width="1.6"/>' +
+        '<g fill="var(--accent)"><circle cx="32" cy="36" r="3"/><circle cx="62" cy="32" r="3"/><circle cx="80" cy="56" r="3"/><circle cx="40" cy="60" r="3"/></g>',
+      arms: arm(142, 88, 194, 92) + '<path d="M184 77L194 92" stroke-width="3.5"/>' + '<circle cx="172" cy="64" r="18" fill="var(--surface)" fill-opacity=".55" stroke-width="4"/>',
+      head: '<path d="M103 52C104 38 136 38 137 52z" fill="var(--muted)"/><rect x="128" y="48" width="18" height="5" rx="2.5" fill="var(--muted)"/>',
+      front: '<rect x="30" y="92" width="34" height="12" rx="3" stroke-dasharray="4 3"/>' + txt(47, 84, '?', 16, 700) },
+
+    /* Büro-Influencer: Ringlicht, Smartphone, Herzchen, Hashtag */
+    I: { e: 'n', m: 'g',
+      back: '<circle cx="120" cy="60" r="34" stroke-width="10"/><circle cx="120" cy="60" r="34" stroke="var(--note)" stroke-width="6"/>' +
+        heart(200, 40, 1) + heart(214, 66, 0.7) + heart(32, 40, 0.8) + bubble(16, 68, 62, 20, '#büroleben', 10),
+      arms: arm(144, 88, 164, 80),
+      front: '<rect x="164" y="52" width="20" height="34" rx="4" fill="var(--fg)"/><rect x="167" y="56" width="14" height="24" rx="1.5" fill="var(--surface)" stroke="none"/><circle cx="165" cy="80" r="5" fill="var(--surface)"/>' },
+
+    /* Dauer-Überforderte: Papiertürme, Mails, Schweißtropfen */
+    O: { e: 'w', m: 'v',
+      back: stack(20, 6, 44) + stack(172, 5, 44) + envelope(72, 20) + envelope(104, 10) + envelope(152, 22),
+      head: '<path d="M107 52l9-4M133 52l-9-4"/><path d="M95 44c-3 5-3 9 0 9s3-4 0-9zM145 42c-3 5-3 9 0 9s3-4 0-9z" fill="var(--surface)"/>' },
+
+    /* Besserwisser: Brille, erhobener Zeigefinger, Gesetzbücher, Sprechblase */
+    W: { e: 'n', m: 'm',
+      back: bubble(166, 22, 70, 24, 'Eigentlich…', 10),
+      arms: arm(142, 88, 158, 52) + '<path d="M158 47v-12" stroke-width="7"/><path d="M158 47v-12" stroke="var(--surface)" stroke-width="3"/>',
+      head: '<circle cx="113" cy="58" r="6.5"/><circle cx="127" cy="58" r="6.5"/><path d="M119.5 58h1"/><path d="M107 49l8-2M133 49l-8-2"/>',
+      front: '<rect x="24" y="92" width="52" height="12" fill="var(--accent)"/><rect x="28" y="80" width="46" height="12" fill="var(--surface)"/><rect x="24" y="68" width="50" height="12" fill="var(--note)"/>' + txt(49, 78, '§', 10, 700) },
+
+    /* Urlaubsreife: Sonnenhut, Sonnenbrille, Strandposter, Koffer, Countdown */
+    V: { e: 'x', m: 's',
+      back: '<rect x="20" y="24" width="62" height="46" fill="var(--surface)"/><circle cx="36" cy="38" r="7" fill="var(--note)"/><path d="M20 58q8-6 16 0t16 0t16 0t14 0M64 70c0-12 2-22 4-30M68 40c-10-6-16-2-18 2M68 40c8-8 14-6 16-2M68 40c-2-10 2-14 6-14"/>' +
+        '<rect x="168" y="24" width="52" height="38" fill="var(--surface)"/><rect x="168" y="24" width="52" height="11" fill="var(--accent)"/>' + txt(194, 33, 'NOCH', 8, 600, 'var(--accent-fg)') + txt(194, 55, '23 Tage', 14, 700),
+      head: '<rect x="105" y="53" width="14" height="9" rx="3" fill="var(--fg)"/><rect x="121" y="53" width="14" height="9" rx="3" fill="var(--fg)"/><path d="M119 56h2"/>' +
+        '<ellipse cx="120" cy="45" rx="30" ry="7" fill="var(--note)"/><path d="M104 44c0-16 32-16 32 0z" fill="var(--note)"/><path d="M104 40h32" stroke="var(--accent)" stroke-width="3"/>',
+      front: '<rect x="172" y="76" width="36" height="28" rx="4" fill="var(--accent)"/><path d="M184 76v-6h12v6M182 76v28M198 76v28"/>' +
+        '<path d="M26 78h26l-13 14z" fill="var(--surface)"/><path d="M39 92v12M31 104h16M44 74l8-10"/>' },
+
+    /* Produktivitäts-Profi: Kopfhörer, abgehakte Liste, Timer, leere Ablage */
+    P: { e: 'n', m: 's',
+      back: '<rect x="160" y="24" width="56" height="66" rx="3" fill="var(--surface)"/><rect x="177" y="20" width="22" height="8" rx="3" fill="var(--muted)"/>' +
+        '<path d="M168 40l4 4 7-8M184 40h24M168 54l4 4 7-8M184 54h24M168 68l4 4 7-8M184 68h20M168 82l4 4 7-8M184 82h24"/>',
+      head: '<path d="M101 60a19 19 0 0 1 38 0" stroke-width="4"/><rect x="97" y="56" width="8" height="14" rx="3" fill="var(--accent)"/><rect x="135" y="56" width="8" height="14" rx="3" fill="var(--accent)"/>',
+      front: '<rect x="22" y="96" width="44" height="8" fill="var(--surface)"/><rect x="26" y="88" width="38" height="8" fill="var(--surface)"/>' +
+        '<circle cx="78" cy="94" r="9" fill="var(--surface)"/><path d="M78 85v-3M78 94v-5M78 94l4 2"/>' },
+
+    /* Büro-Entertainer: Partyhut, Konfetti, Kuchen, Luftballon, Witz */
+    E: { e: 'h', m: 'g',
+      back: '<g stroke="none"><circle cx="30" cy="30" r="3" fill="var(--accent)"/><rect x="52" y="48" width="6" height="6" fill="var(--note)" transform="rotate(20 55 51)"/><circle cx="72" cy="22" r="2.5" fill="var(--fg)"/><rect x="196" y="60" width="6" height="6" fill="var(--accent)" transform="rotate(-15 199 63)"/><circle cx="214" cy="76" r="3" fill="var(--note)"/><circle cx="100" cy="20" r="2.5" fill="var(--accent)"/><rect x="150" y="68" width="6" height="6" fill="var(--fg)" transform="rotate(30 153 71)"/></g>' +
+        '<path d="M0 10c20 14 30-6 50 8s28 0 40 6M240 8c-20 14-30-6-50 8s-28 0-30 4" stroke="var(--accent)"/>' +
+        bubble(146, 30, 88, 24, 'Kennt ihr den?', 9) +
+        '<ellipse cx="44" cy="66" rx="12" ry="15" fill="var(--accent)"/><path d="M44 81c-3 6 3 10 0 16"/>',
+      head: '<path d="M106 46L120 14l14 32z" fill="var(--accent)"/><path d="M110 38h20M114 28h12" stroke="var(--surface)" stroke-width="2"/><circle cx="120" cy="13" r="4" fill="var(--note)"/>',
+      front: '<rect x="168" y="90" width="40" height="14" rx="3" fill="var(--surface)"/><rect x="174" y="76" width="28" height="14" rx="3" fill="var(--note)"/><path d="M188 76v-8"/><path d="M188 60c-3 4-3 6 0 6s3-2 0-6z" fill="var(--accent)"/>' }
+  };
+
+  function artSvg(key, t) {
+    var a = ART[key];
+    var s = '<svg class="art" viewBox="0 0 240 160" role="img" aria-label="Illustration: ' + esc(youAre(key, t)) + '">';
+    s += '<rect width="240" height="160" fill="var(--accent-soft)"/>';
+    s += '<g fill="none" stroke="var(--fg)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">';
+    s += '<path d="M0 148H240" stroke="var(--line)" stroke-width="2"/>';
+    s += (a.back || "");
+    s += '<rect x="94" y="77" width="52" height="29" rx="14" fill="var(--accent)"/>';
+    s += (a.arms || "");
+    s += '<circle cx="120" cy="60" r="17" fill="var(--surface)"/>';
+    s += EYES[a.e || "n"] + MOUTH[a.m || "s"] + (a.head || "");
+    s += '<rect x="12" y="104" width="216" height="9" rx="2" fill="var(--surface)"/><path d="M28 113V148M212 113V148"/>';
+    s += (a.front || "");
+    s += '</g></svg>';
+    return s;
+  }
+
+  var state = { i: 0, answers: [] };
+  var app = document.getElementById("app");
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; });
+  }
+  function setProgress(done) {
+    var n = QS.length;
+    var shown = done ? n : state.i;
+    document.getElementById("pos").textContent = done ? "Fertig" : "Frage " + (state.i + 1) + " von " + n;
+    document.getElementById("pct").textContent = Math.round(shown / n * 100) + " %";
+    document.getElementById("fill").style.width = (shown / n * 100) + "%";
+  }
+
+  function renderQuestion() {
+    var item = QS[state.i];
+    var chosen = state.answers[state.i];
+    var html = '<section class="card" aria-labelledby="qtext"><h2 class="q" id="qtext" tabindex="-1">' + esc(item.q) + '</h2>';
+    html += '<div class="opts" role="group" aria-label="Antworten">';
+    item.o.forEach(function (o, k) {
+      html += '<button type="button" class="opt' + (chosen === k ? " sel" : "") + '" data-k="' + k + '">' +
+        '<span class="letter">' + LETTERS[k] + '</span><span class="opt-text">' + esc(o.t) + '</span></button>';
+    });
+    html += '</div><div class="nav"><button type="button" class="link" id="backBtn"' + (state.i === 0 ? " hidden" : "") + '>Zurück</button></div></section>';
+    app.innerHTML = html;
+    setProgress(false);
+
+    Array.prototype.forEach.call(app.querySelectorAll(".opt"), function (b) {
+      b.addEventListener("click", function () {
+        state.answers[state.i] = Number(b.getAttribute("data-k"));
+        state.i++;
+        if (state.i >= QS.length) renderResult();
+        else { renderQuestion(); document.getElementById("qtext").focus(); }
+      });
+    });
+    document.getElementById("backBtn").addEventListener("click", function () {
+      if (state.i > 0) { state.i--; renderQuestion(); document.getElementById("qtext").focus(); }
+    });
+  }
+
+  function compute() {
+    var score = {}, prim = {};
+    ORDER.forEach(function (k) { score[k] = 0; prim[k] = 0; });
+    QS.forEach(function (q, i) {
+      var o = q.o[state.answers[i]];
+      score[o.p] += 2; prim[o.p] += 1; score[o.s] += 1;
+    });
+    var ranked = ORDER.slice().sort(function (a, b) {
+      if (score[b] !== score[a]) return score[b] - score[a];
+      if (prim[b] !== prim[a]) return prim[b] - prim[a];
+      return ORDER.indexOf(a) - ORDER.indexOf(b);
+    });
+    return { score: score, ranked: ranked };
+  }
+
+  var lastText = "";
+  function renderResult() {
+    var r = compute();
+    var key = r.ranked[0], t = TYPES[key];
+    var partner = TYPES[t.pa];
+    var nr = ("0" + (ORDER.indexOf(key) + 1)).slice(-2);
+    var top = r.score[key];
+    lastText = "Ich bin " + youAre(key, t) + ". " + t.motto + " (Büro-Typen-Quiz)";
+
+    var html = '<section class="card" aria-labelledby="rtitle">';
+    html += '<div class="id"><div class="id-top"><span>Dienstausweis Büro-Persönlichkeit</span><span>Ausweis-Nr. ' + nr + '</span></div>';
+    html += artSvg(key, t);
+    html += '<div class="id-body"><div class="id-head"><div><div class="id-label">Dein Ergebnis</div><h2 class="id-name" id="rtitle" tabindex="-1">Du bist ' + esc(youAre(key, t)) + '</h2></div></div>';
+    html += '<p class="motto">' + esc(t.motto) + '</p>';
+    html += '<p class="desc">' + esc(t.d) + '</p>';
+    html += '<dl class="facts"><div><dt>Stärke</dt><dd>' + esc(t.st) + '</dd></div><div><dt>Schwäche</dt><dd>' + esc(t.sw) + '</dd></div>' +
+      '<div class="wide"><dt>Lieblingssatz</dt><dd>„' + esc(t.ln) + '“</dd></div>' +
+      '<div class="wide"><dt>Arbeitet am besten zusammen mit</dt><dd>' + esc(partner.n) + '</dd></div></dl>';
+    html += '</div></div>';
+
+    html += '<div class="scores"><h3>Deine drei stärksten Typen</h3>';
+    r.ranked.slice(0, 3).forEach(function (k) {
+      var pts = r.score[k];
+      html += '<div class="srow"><span class="sname">' + esc(TYPES[k].n) + '</span><div class="sbar"><span style="width:' + Math.round(pts / top * 100) + '%"></span></div><span class="spts">' + pts + ' P.</span></div>';
+    });
+    html += '</div>';
+
+    html += '<div class="btn-row"><button type="button" class="btn" id="copyBtn">Ergebnis kopieren</button>' +
+      '<button type="button" class="btn ghost" id="againBtn">Noch einmal</button></div>';
+    html += '<p class="status" id="status" role="status"></p>';
+
+    html += '<details class="all"><summary>Alle 16 Büro-Typen ansehen</summary><ul class="alllist">';
+    ORDER.forEach(function (k) {
+      html += '<li><b>' + esc(TYPES[k].n) + '</b><span>' + esc(TYPES[k].motto) + '</span></li>';
+    });
+    html += '</ul></details></section>';
+
+    app.innerHTML = html;
+    setProgress(true);
+    document.getElementById("rtitle").focus();
+
+    document.getElementById("againBtn").addEventListener("click", function () {
+      state = { i: 0, answers: [] };
+      renderQuestion();
+      window.scrollTo(0, 0);
+    });
+    document.getElementById("copyBtn").addEventListener("click", function () {
+      var st = document.getElementById("status");
+      try {
+        navigator.clipboard.writeText(lastText).then(function () {
+          st.textContent = "Kopiert.";
+        }, function () {
+          st.textContent = "Kopieren ist hier nicht möglich. Markiere den Text stattdessen von Hand.";
+        });
+      } catch (e) {
+        st.textContent = "Kopieren ist hier nicht möglich. Markiere den Text stattdessen von Hand.";
+      }
+    });
+  }
+
+  renderQuestion();
+</script>
+
+</body></html>
